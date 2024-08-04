@@ -17,16 +17,20 @@ struct Index {
   @State currentIndex: number = 0
   controller: TabsController = new TabsController();
   @State cats: Cat[] = []
-  @State savecats: Cat[] = []
-  aboutToAppear(): void {
+  @State saveCats: Cat[] = []
+  requestData(){
     let httpRequest = http.createHttp();
     httpRequest.request(
       'https://api.thecatapi.com/v1/images/search?limit=10',
       (err, data)=>{
         if(!err){
-          this.cats = JSON.parse(data.result.toString())
+          let newCats: Cat[]= JSON.parse(data.result.toString())
+          this.cats = [...this.cats, ...newCats]
         }
       })
+  }
+  aboutToAppear(): void {
+    this.requestData()
   }
   @Builder LabelImage(label: string, targetIndex: number, selectedImg: Resource, normalImg: Resource){
     Column(){
@@ -44,11 +48,10 @@ struct Index {
   build() {
     Column(){
       Tabs({controller: this.controller}){
-
         // 下面是“首页”页面
         TabContent(){
-          Column(){
-            Text('Cat you like !')
+          Column() {
+            Text('Choice the cat you like !')
             List(){
               ForEach(this.cats, (item: Cat) => {
                 ListItem(){
@@ -56,67 +59,123 @@ struct Index {
                     Image(item.url).borderRadius({
                       topLeft: 10,
                       topRight: 10,
-                    })
+                    }).width('94%')
                     Row (){
                       Text("id:" + `${ item.id}`).margin({ left: 10})
                       Text(`${item.width} * ${item.height}`).margin({ left: 10})
                       Text('收藏').margin({  right: 15 })
                         .onClick(()=>{
                           let dataPreferences: preferences.Preferences | null = preferences.getPreferencesSync(getContext(), options);
-                          console.log('Data Preferences:', dataPreferences);
-
                           let value: string = dataPreferences.getSync('cats', '[]').toString();
                           let cats: Cat[] = JSON.parse(value)
-                          cats.push(item)
-                          dataPreferences.putSync('cats', JSON.stringify(cats))
-                          dataPreferences.flush()
-                          promptAction.showToast({
-                            message: '收藏成功',
-                          })
+                          if (cats.length >=20){
+                            promptAction.showToast({message:'最多收藏20只猫 ！'})
+                          }else {
+                            let result = cats.some((value,) =>{
+                              return value.id === item.id
+                            })
+                            if (result){
+                              promptAction.showToast({message:'已收藏'})
+                            }else{
+                              cats.push(item)
+                              dataPreferences.putSync('cats', JSON.stringify(cats))
+                              dataPreferences.flush()
+                              promptAction.showToast({
+                                message: '收藏成功',
+                              })
+                            }
+                          }
                         })
                     }
-                    .width('100%')
+                    .width('94%')
                     .height(30)
                     .margin({ top: 20, left: 10, right: 10})
                     .justifyContent(FlexAlign.SpaceBetween)
                   }
+                  .width('100%')
                   .borderRadius(10)
                   .margin({ top: 20, bottom: 20 })
                   .shadow({
                     radius: 10,
                     color: ('#cdcdcd'),
-                    // offsetX: 10,
+                    offsetX: 10,
                     offsetY: 10
                   })
                 }
+                .width('100%')
               },(item: Cat)=> {
                 return item.id
               })
             }
             .width('100%')
             .height('100%')
+            // .onReachStart(() =>{
+            //   this.cats = []
+            //   this.requestData()
+            //   promptAction.showToast({message:'已加载'})
+            // })
+            // .onReachEnd(()=>{
+            //   this.requestData()
+            //   promptAction.showToast({message:'已加载更多'})
+            // })
+            Text('刷新')
+              .onClick(()=>{
+                this.cats = []
+                this.requestData()
+                promptAction.showToast({message: '已刷新'})
+              })
+              .width(50)
+              .height(50)
+              .backgroundColor(Color.Pink)
+              .textAlign(TextAlign.Center)
+              .borderRadius(25)
+              .position({ x: '80%', y: '70%' })
+            Text('更多')
+              .onClick(()=>{
+                this.requestData()
+                promptAction.showToast({message: '已加载更多'})
+              })
+              .width(50)
+              .height(50)
+              .backgroundColor(Color.Pink)
+              .textAlign(TextAlign.Center)
+              .borderRadius(25)
+              .position({ x: '80%', y: '80%' })
           }
-          .width('96%')
+          .width('100%')
           .height('100%')
         }.tabBar(this.LabelImage('首页', 0, $r("app.media.home_selected"), $r('app.media.home_normal')))
 
         // 下面是“我的”页面
         TabContent(){
           Column(){
+            Text('The cat you like !')
             List(){
-              ForEach(this.savecats, (item: Cat) => {
+              ForEach(this.saveCats, (item: Cat , index :number) => {
                 ListItem(){
                   Column(){
                     Image(item.url).borderRadius({
                       topLeft: 10,
                       topRight: 10,
-                    })
+                    }).width('94%')
                     Row (){
                       Text("id:" + `${ item.id}`).margin({ left: 10})
                       Text(`${item.width} * ${item.height}`).margin({ left: 10})
                       Text('删除').margin({  right: 15 })
+                        .onClick(()=>{
+                          let value: string = dataPreferences.getSync('cats', '[]').toString();
+                          let cats: Cat[] = JSON.parse(value)
+                          cats.splice(index,1)
+                          dataPreferences.putSync('cats', JSON.stringify(cats))
+                          dataPreferences.flush()
+                          this.saveCats = cats
+                          promptAction.showToast({
+                            message: '已删除',
+                          })
+                        })
+
                     }
-                    .width('100%')
+                    .width('94%')
                     .height(30)
                     .margin({ top: 20, left: 10, right: 10})
                     .justifyContent(FlexAlign.SpaceBetween)
@@ -128,7 +187,7 @@ struct Index {
                     color: ('#cdcdcd'),
                     offsetY: 10
                   })
-                }
+                }.width('100%')
               },(item: Cat)=> {
                 return item.id
               })
@@ -141,7 +200,7 @@ struct Index {
         .onWillShow(() => {
           console.log('onWillShow')
           let value: string = dataPreferences.getSync('cats', '[]').toString();
-          this.savecats = JSON.parse(value)
+          this.saveCats = JSON.parse(value)
         })
       }
       .barPosition(BarPosition.End)
