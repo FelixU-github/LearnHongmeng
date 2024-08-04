@@ -51,7 +51,7 @@ struct Index {
         // 下面是“首页”页面
         TabContent(){
           Column() {
-            Text('Choice the cat you like !')
+            Text('Choice the cat you like !'+ `${ this.cats.length}`)
             List(){
               ForEach(this.cats, (item: Cat) => {
                 ListItem(){
@@ -127,6 +127,7 @@ struct Index {
               .width(50)
               .height(50)
               .backgroundColor(Color.Pink)
+              .opacity(0.5)
               .textAlign(TextAlign.Center)
               .borderRadius(25)
               .position({ x: '80%', y: '70%' })
@@ -137,7 +138,8 @@ struct Index {
               })
               .width(50)
               .height(50)
-              .backgroundColor(Color.Pink)
+              .backgroundColor('#db93e4')
+              .opacity(0.5)
               .textAlign(TextAlign.Center)
               .borderRadius(25)
               .position({ x: '80%', y: '80%' })
