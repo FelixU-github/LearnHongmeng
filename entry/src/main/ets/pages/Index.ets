@@ -18,6 +18,9 @@ struct Index {
   controller: TabsController = new TabsController();
   @State cats: Cat[] = []
   @State saveCats: Cat[] = []
+  @State visible: Visibility = Visibility.Hidden
+  private swiperController: SwiperController = new SwiperController()
+  // @State imageIndex :
   requestData(){
     let httpRequest = http.createHttp();
     httpRequest.request(
@@ -50,7 +53,7 @@ struct Index {
       Tabs({controller: this.controller}){
         // 下面是“首页”页面
         TabContent(){
-          Column() {
+          Stack() {
             Text('Choice the cat you like !'+ `${ this.cats.length}`)
             List(){
               ForEach(this.cats, (item: Cat) => {
@@ -59,7 +62,7 @@ struct Index {
                     Image(item.url).borderRadius({
                       topLeft: 10,
                       topRight: 10,
-                    }).width('94%')
+                    }).width('90%')
                     Row (){
                       Text("id:" + `${ item.id}`).margin({ left: 10})
                       Text(`${item.width} * ${item.height}`).margin({ left: 10})
@@ -143,6 +146,38 @@ struct Index {
               .textAlign(TextAlign.Center)
               .borderRadius(25)
               .position({ x: '80%', y: '80%' })
+
+            Swiper(this.swiperController) {
+              ForEach(this.cats, (item: Cat) => {
+                Image(item.url)
+                  .width('90%')
+                  .height(160)
+                  .backgroundColor(0xAFEEEE)
+                  .onClick(() => {
+                    this.visible = Visibility.Hidden
+                  })
+                  // .textAlign(TextAlign.Center)
+                  // .fontSize(30)
+              }, (item: Cat) => item.id)
+            }
+            .visibility(this.visible)
+            .cachedCount(2)
+            .index(1)
+            .autoPlay(true)
+            .interval(4000)
+            .indicator( // 设置圆点导航点样式
+              new DotIndicator()
+                .itemWidth(15)
+                .itemHeight(15)
+                .selectedItemWidth(15)
+                .selectedItemHeight(15)
+                .color(Color.Gray)
+                .selectedColor(Color.Blue))
+            .loop(true)
+            .duration(1000)
+            .itemSpace(0)
+            .displayArrow(true, false)
+
           }
           .width('100%')
           .height('100%')
